@@ -1,0 +1,5 @@
+mcp[cli]>=1.1.2
+psycopg2-binary>=2.9.9
+pymongo>=4.6.1
+uvicorn>=0.29.0
+starlette>=0.37.2

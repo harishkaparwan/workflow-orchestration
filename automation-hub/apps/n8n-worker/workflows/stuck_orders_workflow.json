@@ -1,0 +1,126 @@
+{
+  "name": "Monitor Stuck Orders (Stock & SOS)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT r.order_id, r.status, 'Stock' as order_type\nFROM stock_request_log r\nLEFT JOIN stock_entry_log e ON r.order_id = e.order_id\nWHERE r.status = 'INQUE' AND e.order_id IS NULL;"
+      },
+      "id": "2",
+      "name": "Check Postgres (Stock)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [400, 200]
+    },
+    {
+      "parameters": {
+        "operation": "aggregate",
+        "collection": "sos_request_log",
+        "query": "[\n  { \"$match\": { \"status\": \"INQUE\" } },\n  { \"$lookup\": {\n      \"from\": \"sos_entry_log\",\n      \"localField\": \"order_id\",\n      \"foreignField\": \"order_id\",\n      \"as\": \"entries\"\n  }},\n  { \"$match\": { \"entries\": { \"$size\": 0 } } },\n  { \"$project\": { \"order_id\": 1, \"status\": 1, \"order_type\": \"SOS\" } }\n]"
+      },
+      "id": "3",
+      "name": "Check MongoDB (SOS)",
+      "type": "n8n-nodes-base.mongoDb",
+      "typeVersion": 1,
+      "position": [400, 400]
+    },
+    {
+      "parameters": {},
+      "id": "4",
+      "name": "Merge Stuck Orders",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://webhook.site/your-webhook-url-here",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "Please have an attention! Order {{$json.order_id}} (Type: {{$json.order_type}}) is stuck in INQUE status."
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Send Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [800, 300]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Check Postgres (Stock)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check MongoDB (SOS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Postgres (Stock)": {
+      "main": [
+        [
+          {
+            "node": "Merge Stuck Orders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check MongoDB (SOS)": {
+      "main": [
+        [
+          {
+            "node": "Merge Stuck Orders",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Stuck Orders": {
+      "main": [
+        [
+          {
+            "node": "Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {}
+}

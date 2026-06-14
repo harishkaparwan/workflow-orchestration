@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Automation Hub - Workflow Dashboard">
+  <title>Automation Hub — Dashboard</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="nav-logo">⚡</span>
+      <span class="nav-title">Automation Hub</span>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link active" id="nav-dashboard">Dashboard</a>
+      <a href="/workflows.html" class="nav-link" id="nav-workflows">Workflows</a>
+      <a href="http://localhost:5678" class="nav-link" target="_blank" id="nav-n8n">n8n Editor ↗</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Monitor your automation workflows and system health</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">🔌</div>
+        <div class="stat-label">API Status</div>
+        <div class="stat-value" id="stat-api-status">Online</div>
+        <div class="stat-detail"><span class="status-dot status-dot--active"></span> Healthy</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">⚙️</div>
+        <div class="stat-label">n8n Status</div>
+        <div class="stat-value" id="stat-n8n-status">—</div>
+        <div class="stat-detail" id="stat-n8n-detail">Checking...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">📋</div>
+        <div class="stat-label">Active Workflows</div>
+        <div class="stat-value" id="stat-workflows">0</div>
+        <div class="stat-detail" id="stat-workflows-detail">Total configured</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">⏱️</div>
+        <div class="stat-label">Uptime</div>
+        <div class="stat-value" id="stat-uptime">—</div>
+        <div class="stat-detail" id="stat-uptime-detail">Since startup</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+      <h2 class="section-title">Quick Actions</h2>
+      <div class="quick-actions">
+        <a href="/workflows.html" class="btn btn--primary" id="btn-new-workflow">+ New Workflow</a>
+        <a href="http://localhost:5678" target="_blank" class="btn btn--secondary" id="btn-open-n8n">Open n8n Editor</a>
+        <button class="btn btn--secondary" id="btn-refresh" type="button">↻ Refresh</button>
+      </div>
+    </div>
+
+    <!-- n8n API Key Config -->
+    <div class="section" id="n8n-api-config">
+      <div class="card" id="n8n-key-banner" style="border-left: 3px solid var(--warning); display: none;">
+        <div style="display: flex; align-items: center; gap: var(--space-md); flex-wrap: wrap;">
+          <div style="flex: 1; min-inline-size: 200px;">
+            <strong style="color: var(--warning);">🔑 n8n API Key Required</strong>
+            <p class="text-muted" style="margin-block-start: var(--space-xs); font-size: 0.875rem;">
+              To display n8n workflows, enter your API key. Generate one at
+              <a href="http://localhost:5678/settings/api" target="_blank" style="color: var(--accent);">n8n Settings → API</a>.
+            </p>
+          </div>
+          <div style="display: flex; gap: var(--space-sm); align-items: center;">
+            <input type="password" id="n8n-api-key-input" class="form-input" placeholder="Enter n8n API key..." style="inline-size: 280px; font-size: 0.875rem;">
+            <button type="button" class="btn btn--primary btn--sm" id="btn-save-api-key">Connect</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- n8n Workflows -->
+    <div class="section">
+      <h2 class="section-title">n8n Workflows</h2>
+      <div class="table-card">
+        <table class="data-table" id="n8n-workflows-table">
+          <thead>
+            <tr>
+              <th>Workflow</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Updated</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="n8n-workflows-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="n8n-workflows-empty">
+          <div class="empty-icon">🔗</div>
+          <p>No n8n workflows found</p>
+          <p class="text-muted">Create workflows in the <a href="http://localhost:5678" target="_blank" style="color: var(--accent);">n8n Editor</a></p>
+        </div>
+      <!-- Python Executor -->
+    <div class="section">
+      <h2 class="section-title">Python Playground</h2>
+      <div class="table-card" style="padding: 20px;">
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Output Filename (Optional)</label>
+          <input type="text" id="python-filename" class="form-input" placeholder="e.g. data.csv" style="width: 300px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; color: var(--text-secondary);">Python Script</label>
+          <textarea id="python-script" class="form-input" rows="25" style="font-family: monospace;">
+import sys
+import subprocess
+import os
+import csv
+
+# Automatically install required database driver
+try:
+    import psycopg2
+except ImportError:
+    print("Installing psycopg2...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "psycopg2-binary", "--quiet"])
+    import psycopg2
+
+print("Connecting to PostgreSQL...")
+conn = psycopg2.connect(
+    host=os.environ.get('PGHOST', 'host.containers.internal'),
+    port=os.environ.get('PGPORT', '5434'),
+    user=os.environ.get('PGUSER', 'localadmin'),
+    password=os.environ.get('PGPASSWORD', 'localadmin'),
+    dbname=os.environ.get('PGDATABASE', 'hercules')
+)
+
+cursor = conn.cursor()
+cursor.execute('SELECT * FROM "StockRequestLog" ORDER BY created_at DESC LIMIT 1000;')
+rows = cursor.fetchall()
+col_names = [desc[0] for desc in cursor.description]
+
+output_dir = os.environ.get('OUTPUT_DIR', '/tmp')
+filename = os.environ.get('OUTPUT_FILENAME', 'postgres_export.csv')
+output_path = f"{output_dir}/{filename}"
+
+with open(output_path, 'w', newline='') as f:
+    writer = csv.writer(f)
+    writer.writerow(col_names)
+    writer.writerows(rows)
+
+print(f"Successfully exported {len(rows)} records to {output_path}!")
+
+cursor.close()
+conn.close()
+</textarea>
+        </div>
+        <button id="btn-run-python" class="btn btn--primary">🚀 Execute Script</button>
+
+        <div id="python-results" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+          <h3 style="margin-bottom: 10px;">Execution Results</h3>
+          <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; white-space: pre-wrap;" id="python-stdout"></div>
+          <div style="background: rgba(255,0,0,0.1); color: #ff6b6b; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-family: monospace; white-space: pre-wrap; display: none;" id="python-stderr"></div>
+          
+          <a id="python-download-btn" href="#" target="_blank" class="btn btn--success" style="display: none; text-decoration: none; text-align: center; width: max-content;">⬇️ Download Generated File</a>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- Recent Workflow Executions (n8n Logs) -->
+    <div class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="section-title">n8n Executions (Logs)</h2>
+      </div>
+      <div class="table-card">
+        <table class="data-table" id="executions-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Workflow Name</th>
+              <th>Status</th>
+              <th>Started At</th>
+              <th>Running Time</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="executions-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="executions-empty">
+          <div class="empty-icon">📭</div>
+          <p>No executions found</p>
+          <p class="text-muted">Run a workflow to see logs</p>
+        </div>
+      </div>
+    </div>
+    <!-- System Users (PostgreSQL) -->
+    <div class="section">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="section-title">System Users <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-secondary);">(PostgreSQL via Python Backend)</span></h2>
+        <button class="btn btn--primary btn--sm" id="btn-seed-data">🌱 Seed Fake Data</button>
+      </div>
+      <div class="table-card">
+        <table class="data-table" id="users-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="users-empty">
+          <div class="empty-icon">👥</div>
+          <p>No users found</p>
+          <p class="text-muted">Click 'Seed Fake Data' to generate Postgres users</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Events (MongoDB) -->
+    <div class="section">
+      <h2 class="section-title">Recent Events <span style="font-size: 0.9rem; font-weight: normal; color: var(--text-secondary);">(MongoDB via Python Backend)</span></h2>
+      <div class="table-card">
+        <table class="data-table" id="events-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Action</th>
+              <th>User</th>
+              <th>Status</th>
+              <th>IP Address</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody id="events-tbody">
+            <!-- populated by JS -->
+          </tbody>
+        </table>
+        <div class="empty-state" id="events-empty">
+          <div class="empty-icon">📊</div>
+          <p>No events found</p>
+          <p class="text-muted">Click 'Seed Fake Data' to generate MongoDB events</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

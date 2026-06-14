@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Automation Hub - Workflow Configuration">
+  <title>Automation Hub — Workflows</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-brand">
+      <span class="nav-logo">⚡</span>
+      <span class="nav-title">Automation Hub</span>
+    </div>
+    <div class="nav-links">
+      <a href="/" class="nav-link" id="nav-dashboard">Dashboard</a>
+      <a href="/workflows.html" class="nav-link active" id="nav-workflows">Workflows</a>
+      <a href="http://localhost:5678" class="nav-link" target="_blank" id="nav-n8n">n8n Editor ↗</a>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1>Workflows</h1>
+      <p>Configure and manage your automation workflows</p>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search workflows…"
+        autocomplete="off"
+      >
+      <button class="btn btn--primary" type="button" id="btn-create-workflow">+ New Workflow</button>
+    </div>
+
+    <!-- Workflows Grid -->
+    <div class="section">
+      <div class="workflows-grid" id="workflows-grid">
+        <!-- populated by JS -->
+      </div>
+
+      <div class="empty-state" id="workflows-empty" style="display: none;">
+        <div class="empty-icon">🔧</div>
+        <p>No workflows configured</p>
+        <p class="text-muted">Create your first workflow to automate tasks</p>
+        <button class="btn btn--primary" type="button" style="margin-block-start: var(--space-lg);" id="btn-empty-create">+ New Workflow</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create/Edit Workflow Modal -->
+  <div class="modal-overlay" id="workflow-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Create Workflow</h2>
+        <button class="modal-close" type="button" aria-label="Close modal" id="btn-modal-close">✕</button>
+      </div>
+
+      <form id="workflow-form" novalidate>
+        <div class="form-group">
+          <label for="wf-name">Name</label>
+          <input
+            type="text"
+            id="wf-name"
+            class="form-input"
+            placeholder="My Workflow"
+            required
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="wf-description">Description</label>
+          <textarea
+            id="wf-description"
+            class="form-textarea"
+            placeholder="Describe what this workflow does…"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="wf-type">Type</label>
+          <select id="wf-type" class="form-select">
+            <option value="webhook">Webhook</option>
+            <option value="schedule">Schedule</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="webhook-fields" style="display: block;">
+          <label for="wf-webhook-url">Webhook URL</label>
+          <input
+            type="url"
+            id="wf-webhook-url"
+            class="form-input"
+            placeholder="/webhook/my-workflow"
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="form-group" id="schedule-fields" style="display: none;">
+          <label for="wf-schedule">Schedule (Cron Expression)</label>
+          <input
+            type="text"
+            id="wf-schedule"
+            class="form-input"
+            placeholder="*/5 * * * *"
+            autocomplete="off"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="wf-enabled">Enabled</label>
+          <label class="toggle-switch">
+            <input type="checkbox" id="wf-enabled" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn--secondary" type="button" id="btn-cancel">Cancel</button>
+          <button class="btn btn--primary" type="submit">Save Workflow</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="delete-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Delete Workflow</h2>
+        <button class="modal-close" type="button" aria-label="Close modal" id="btn-delete-close">✕</button>
+      </div>
+
+      <div class="delete-warning">
+        <div class="delete-icon">⚠️</div>
+        <p>Are you sure?</p>
+        <p>This action cannot be undone. The workflow and all its configuration will be permanently deleted.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn--secondary" type="button" id="btn-delete-cancel">Cancel</button>
+        <button class="btn btn--danger" type="button" id="btn-delete-confirm">Delete Workflow</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/js/app.js"></script>
+  <script src="/js/workflows.js"></script>
+</body>
+</html>

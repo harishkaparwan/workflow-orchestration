@@ -1,0 +1,124 @@
+{
+  "name": "Python Executor Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-python",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "python-executor-webhook-id"
+    },
+    {
+      "parameters": {
+        "jsCode": "const script = $input.item.json.body.script || \"print('No script provided')\";\nconst filename = $input.item.json.body.filename || \"output.txt\";\nconst base64Script = Buffer.from(script).toString('base64');\n\nreturn [\n  {\n    json: {\n      base64Script,\n      filename\n    }\n  }\n];"
+      },
+      "id": "2",
+      "name": "Encode Script",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=mkdir -p /app/apps/api/src/public/downloads\necho '{{$json.base64Script}}' | base64 -d > /tmp/n8n_custom_script.py\nexport OUTPUT_DIR=/app/apps/api/src/public/downloads\nexport OUTPUT_FILENAME='{{$('Encode Script').item.json.filename}}'\npython3 /tmp/n8n_custom_script.py"
+      },
+      "id": "3",
+      "name": "Execute Command",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"stdout\": {{(JSON.stringify($json.stdout) || '\"\"')}},\n  \"stderr\": {{(JSON.stringify($json.stderr) || '\"\"')}},\n  \"downloadUrl\": \"http://localhost:3000/downloads/{{$('Encode Script').item.json.filename}}\"\n}",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"error\": \"Failed to execute script\",\n  \"details\": {{(JSON.stringify($json.error) || '\"\"')}}\n}",
+        "options": {}
+      },
+      "id": "5",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        500
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Encode Script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encode Script": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
